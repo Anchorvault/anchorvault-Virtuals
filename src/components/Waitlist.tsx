@@ -99,9 +99,16 @@ const Waitlist = () => {
                 </button>
               </form>
             ) : (
-              <div className="glass-panel p-8 bg-gradient-to-r from-virtual-green/10 to-transparent border-virtual-green/30 transform transition-all scale-100">
-                <h3 className="text-2xl font-bold text-anchor-blue mb-2">Welcome supporter!</h3>
-                <p className="text-slate-600 font-medium">You are officially locked in. Keep an eye on your inbox for the TGE details.</p>
+              <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg border border-slate-100 flex items-center gap-6 transform transition-all scale-100 animate-in fade-in zoom-in duration-500 max-w-md mx-auto">
+                <div className="flex-shrink-0 w-12 h-12 rounded-full border-[3px] border-[#0eb076] flex items-center justify-center">
+                  <svg className="w-6 h-6 text-[#0eb076]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div className="text-left">
+                  <h3 className="text-xl font-bold text-[#0f172a] mb-1">Access Secured!</h3>
+                  <p className="text-[#64748b] text-base font-medium">You are #102 in line for the protocol launch.</p>
+                </div>
               </div>
             )}
             
