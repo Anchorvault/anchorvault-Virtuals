@@ -44,19 +44,14 @@ const Waitlist = () => {
 
     try {
       await sendSubscriptionEmail(email);
-    } catch (err) {
-      // Log but don't block — subscriber sees success card regardless
-      console.error('Email send error:', err);
+      setStatus('success');
+      localStorage.setItem('anchorvault_waitlist', email);
+      confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 }, colors: ['#10B981', '#1E3A8A', '#ffffff'] });
+    } catch (err: any) {
+      console.error('Email error:', err?.message);
+      setErrorMsg(err?.message || 'Something went wrong. Please try again.');
+      setStatus('error');
     }
-
-    setStatus('success');
-    localStorage.setItem('anchorvault_waitlist', email);
-    confetti({
-      particleCount: 150,
-      spread: 100,
-      origin: { y: 0.5 },
-      colors: ['#10B981', '#1E3A8A', '#ffffff']
-    });
   };
 
   return (

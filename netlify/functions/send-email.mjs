@@ -1,3 +1,4 @@
+// Netlify Serverless Function — called by frontend, uses Resend server-side
 export async function handler(event) {
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -9,59 +10,66 @@ export async function handler(event) {
   if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
 
   const { email } = JSON.parse(event.body || '{}');
-  if (!email) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Email required' }) };
 
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: 'AnchorVault <onboarding@resend.dev>',
-      to: [email],
-      subject: '🎉 You\'re on the AnchorVault Waitlist — Access Secured!',
-      html: `
-        <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
-          <div style="background:linear-gradient(135deg,#0F172A,#1E3A5F);padding:48px 40px;text-align:center;">
-            <p style="margin:0 0 8px;color:#10B981;font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;">AnchorVault x Virtuals Protocol</p>
-            <h1 style="margin:0;color:#fff;font-size:34px;font-weight:800;">Access Secured! ✅</h1>
-            <p style="margin:14px 0 0;color:#94A3B8;font-size:16px;">You are officially in line for the protocol launch.</p>
-          </div>
-          <div style="padding:40px;background:#fff;">
-            <p style="color:#334155;font-size:17px;line-height:1.7;">Hi there! 👋</p>
-            <p style="color:#334155;font-size:16px;line-height:1.7;">
-              Thank you for subscribing to the <strong>AnchorVault x Virtuals Protocol</strong> newsletter.
-              You have successfully secured your spot for early access.
-            </p>
-            <div style="background:#F0FDF4;border-left:4px solid #10B981;border-radius:0 12px 12px 0;padding:20px 24px;margin:24px 0;">
-              <p style="margin:0 0 8px;color:#0F172A;font-size:15px;font-weight:700;">What happens next?</p>
-              <p style="margin:0;color:#475569;font-size:14px;line-height:1.7;">
-                ✦ You'll be <strong>first to know</strong> when the TGE goes live<br/>
-                ✦ <strong>Exclusive updates</strong> straight to your inbox<br/>
-                ✦ <strong>Early access</strong> to AnchorVault liquidity pools
-              </p>
-            </div>
-            <div style="text-align:center;margin-top:32px;">
-              <a href="https://www.anchorvault.xyz" style="display:inline-block;background:linear-gradient(135deg,#10B981,#059669);color:#fff;text-decoration:none;padding:16px 40px;border-radius:50px;font-size:16px;font-weight:700;">
-                Explore the Protocol →
-              </a>
-            </div>
-          </div>
-          <div style="background:#F8FAFC;padding:28px 40px;text-align:center;border-top:1px solid #E2E8F0;">
-            <a href="https://x.com/Anchor_Vault" style="color:#10B981;text-decoration:none;font-size:14px;font-weight:600;">@Anchor_Vault on X</a>
-            <p style="margin:16px 0 0;color:#CBD5E1;font-size:12px;">© ${new Date().getFullYear()} AnchorVault Protocol · anchorvault.xyz</p>
-          </div>
-        </div>
-      `,
-    }),
-  });
-
-  const data = await res.json();
-  if (!res.ok) {
-    console.error('Resend error:', JSON.stringify(data));
-    return { statusCode: 500, headers, body: JSON.stringify({ error: data?.message || 'Resend API failed' }) };
+  if (!email || !email.includes('@')) {
+    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid email' }) };
   }
+
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
+  if (!RESEND_API_KEY) {
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'RESEND_API_KEY not configured in Netlify env vars' }) };
+  }
+
+  const sendEmail = async (to, subject, html) => {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ from: 'AnchorVault <onboarding@resend.dev>', to, subject, html }),
+    });
+    return res.json();
+  };
+
+  // 1. Welcome email TO the subscriber
+  await sendEmail(
+    [email],
+    "🎉 You're on the AnchorVault Waitlist!",
+    `<div style="font-family:sans-serif;max-width:560px;margin:auto;">
+      <div style="background:linear-gradient(135deg,#0F172A,#1E3A5F);padding:40px;text-align:center;border-radius:16px 16px 0 0;">
+        <h1 style="color:#fff;margin:0;font-size:28px;">Access Secured! ✅</h1>
+        <p style="color:#10B981;margin:10px 0 0;font-weight:700;letter-spacing:2px;font-size:13px;">ANCHORVAULT x VIRTUALS PROTOCOL</p>
+      </div>
+      <div style="background:#fff;padding:36px;border-radius:0 0 16px 16px;border:1px solid #e2e8f0;">
+        <p style="color:#334155;font-size:16px;line-height:1.7;">Hi there! 👋</p>
+        <p style="color:#334155;font-size:16px;line-height:1.7;">You've successfully subscribed and secured your spot in line for the <strong>AnchorVault protocol launch</strong>.</p>
+        <div style="background:#F0FDF4;border-left:4px solid #10B981;padding:16px 20px;margin:24px 0;border-radius:0 8px 8px 0;">
+          <strong style="color:#064e3b;">What's next?</strong>
+          <p style="color:#475569;margin:8px 0 0;font-size:14px;line-height:1.7;">
+            ✦ First to know when TGE goes live<br/>
+            ✦ Exclusive updates straight to your inbox<br/>
+            ✦ Early access to AnchorVault liquidity pools
+          </p>
+        </div>
+        <div style="text-align:center;margin-top:28px;">
+          <a href="https://www.anchorvault.xyz" style="background:#10B981;color:#fff;padding:14px 36px;border-radius:50px;text-decoration:none;font-weight:700;font-size:15px;">Explore the Protocol →</a>
+        </div>
+        <p style="margin-top:32px;color:#94a3b8;font-size:12px;text-align:center;">© ${new Date().getFullYear()} AnchorVault Protocol · <a href="https://x.com/Anchor_Vault" style="color:#10B981;">@Anchor_Vault</a></p>
+      </div>
+    </div>`
+  );
+
+  // 2. Admin notification TO you
+  await sendEmail(
+    ['hello@anchorvault.xyz'],
+    `🔔 New Subscriber: ${email}`,
+    `<p style="font-family:sans-serif;font-size:16px;color:#334155;">
+      New newsletter subscriber:<br/><br/>
+      <strong style="font-size:18px;">${email}</strong><br/><br/>
+      Time: ${new Date().toUTCString()}
+    </p>`
+  );
 
   return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
 }
