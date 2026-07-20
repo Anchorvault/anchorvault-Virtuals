@@ -5,6 +5,7 @@ import { sendWaitlistEmail } from '../lib/resend';
 const Waitlist = () => {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [timeLeft, setTimeLeft] = useState({
     days: 3, hours: 23, minutes: 59, seconds: 59
   });
@@ -32,9 +33,20 @@ const Waitlist = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const handleSubmit = (e: any) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     if (!email) return;
+    
+    setIsSubmitting(true);
+    
+    // Fire the email API request
+    sendWaitlistEmail(email);
+    
+    // Simulate backend processing time for a premium UX
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    setIsSubmitting(false);
+    setSubmitted(true);
     
     confetti({
       particleCount: 150,
@@ -43,8 +55,6 @@ const Waitlist = () => {
       colors: ['#10B981', '#1E3A8A', '#ffffff']
     });
     
-    setSubmitted(true);
-    sendWaitlistEmail(email);
     // Real app would save this
     localStorage.setItem('anchorvault_waitlist', 'true');
   };
@@ -93,9 +103,17 @@ const Waitlist = () => {
                 />
                 <button 
                   type="submit"
-                  className="px-8 py-4 rounded-xl font-bold text-white bg-anchor-blue hover:bg-anchor-blueAccent transition-all shadow-xl hover:shadow-2xl border border-transparent hover:border-virtual-green/50 flex-shrink-0"
+                  disabled={isSubmitting}
+                  className="px-8 py-4 rounded-xl font-bold text-white bg-anchor-blue hover:bg-anchor-blueAccent transition-all shadow-xl hover:shadow-2xl border border-transparent hover:border-virtual-green/50 flex-shrink-0 flex items-center justify-center min-w-[180px] disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  Join the Waitlist
+                  {isSubmitting ? (
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : (
+                    "Join the Waitlist"
+                  )}
                 </button>
               </form>
             ) : (
