@@ -1,25 +1,30 @@
 import { useState } from 'react';
 import confetti from 'canvas-confetti';
 import { CheckCircle2, ShieldCheck, Activity } from 'lucide-react';
-import { sendWaitlistEmail } from '../lib/resend';
+import { sendSubscriptionEmail } from '../lib/emailService';
 
 const Hero = () => {
   const [email, setEmail] = useState('');
-  const [joined, setJoined] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle');
   const [queueNum, setQueueNum] = useState(0);
 
-  const handleJoin = (e: any) => {
+  const handleJoin = async (e: any) => {
     e.preventDefault();
     if (!email) return;
+    setStatus('loading');
+    try {
+      await sendSubscriptionEmail(email);
+    } catch (err) {
+      console.error('Subscription error:', err);
+    }
+    setQueueNum(Math.floor(100 + Math.random() * 50));
+    setStatus('success');
     confetti({
       particleCount: 100,
       spread: 70,
       origin: { y: 0.6 },
       colors: ['#10B981', '#0F172A', '#ffffff']
     });
-    setQueueNum(Math.floor(100 + Math.random() * 50));
-    setJoined(true);
-    sendWaitlistEmail(email);
   };
 
   return (
@@ -38,10 +43,10 @@ const Hero = () => {
           </p>
 
           <div className="pt-4">
-            {!joined ? (
+            {status === 'idle' && (
               <form onSubmit={handleJoin} className="relative max-w-md">
                 <div className="glass-panel p-2 flex items-center shadow-lg border-virtual-green/50 hover:shadow-[0_0_20px_rgba(16,185,129,0.15)] transition-shadow">
-                  <input 
+                  <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -54,12 +59,24 @@ const Hero = () => {
                   </button>
                 </div>
               </form>
-            ) : (
+            )}
+
+            {status === 'loading' && (
+              <div className="glass-panel p-4 max-w-md flex items-center gap-4">
+                <svg className="animate-spin h-8 w-8 text-virtual-green flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <p className="text-slate-600 font-medium">Securing your spot…</p>
+              </div>
+            )}
+
+            {status === 'success' && (
               <div className="glass-panel p-6 max-w-md border-virtual-green bg-virtual-green/5 flex items-center gap-4">
-                <CheckCircle2 className="w-10 h-10 text-virtual-green" />
+                <CheckCircle2 className="w-10 h-10 text-virtual-green flex-shrink-0" />
                 <div>
                   <h3 className="font-bold text-anchor-blue">Access Secured!</h3>
-                  <p className="text-slate-600 text-sm">You are #{queueNum} in line for the protocol launch.</p>
+                  <p className="text-slate-600 text-sm">You are #{queueNum} in line for the protocol launch. 🎉</p>
                 </div>
               </div>
             )}
