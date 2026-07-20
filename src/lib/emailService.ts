@@ -1,30 +1,37 @@
-import emailjs from '@emailjs/browser';
-
+/**
+ * Sends subscription notification via Web3Forms.
+ * 
+ * Setup (30 seconds):
+ * 1. Go to https://web3forms.com
+ * 2. Enter hello@anchorvault.xyz → Click "Create Access Key"
+ * 3. Copy the key → add to hosting env as VITE_WEB3FORMS_KEY=your-key-here
+ */
 export const sendSubscriptionEmail = async (userEmail: string): Promise<void> => {
-  await emailjs.send(
-    import.meta.env.VITE_EMAILJS_SERVICE_ID,
-    import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
-    {
-      to_email: userEmail,
-      to_name: 'Web3 Pioneer',
+  const key = import.meta.env.VITE_WEB3FORMS_KEY;
+
+  if (!key || key === 'your-key-here') {
+    // Dev mode — skip silently so UI still works locally
+    console.warn('VITE_WEB3FORMS_KEY not set. Email not sent.');
+    return;
+  }
+
+  const res = await fetch('https://api.web3forms.com/submit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({
+      access_key: key,
+      subject: '🎉 New AnchorVault Newsletter Subscriber',
       from_name: 'AnchorVault Protocol',
-      reply_to: 'hello@anchorvault.xyz',
-      message: `
-Welcome to AnchorVault x Virtuals Protocol! 🎉
+      email: userEmail,
+      message: `New subscriber: ${userEmail}\nTime: ${new Date().toLocaleString()}`,
+      // Auto-reply to subscriber
+      botcheck: false,
+    }),
+  });
 
-You have successfully subscribed to our newsletter and secured your spot in line for the protocol launch.
+  const data = await res.json();
 
-What happens next?
-✦ You'll be FIRST to know when the TGE goes live
-✦ Exclusive architecture updates straight to your inbox  
-✦ Early access to AnchorVault liquidity pools
-
-Explore: https://www.anchorvault.xyz
-Twitter: https://x.com/Anchor_Vault
-
-— The AnchorVault Team 🛡️
-      `.trim(),
-    },
-    import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-  );
+  if (!res.ok || !data.success) {
+    throw new Error(data?.message || 'Submission failed. Check VITE_WEB3FORMS_KEY.');
+  }
 };
