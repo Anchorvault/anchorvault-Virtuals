@@ -9,9 +9,14 @@ export const sendSubscriptionEmail = async (userEmail: string): Promise<void> =>
     body: JSON.stringify({ email: userEmail }),
   });
 
-  const data = await res.json();
+  let data: any = {};
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error(`Server error (${res.status}). Make sure RESEND_API_KEY is set in Netlify env vars.`);
+  }
 
   if (!res.ok || !data.success) {
-    throw new Error(data.error || 'Failed to send email.');
+    throw new Error(data.error || `Failed to send email (status ${res.status}).`);
   }
 };
