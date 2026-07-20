@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PlayCircle, Code, Coins, ArrowRight } from 'lucide-react';
+import { Coins, ArrowRight } from 'lucide-react';
 
 const VideoHub = () => {
   const [isSimulating, setIsSimulating] = useState(false);
