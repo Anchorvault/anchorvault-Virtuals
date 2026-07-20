@@ -1,43 +1,68 @@
-import emailjs from '@emailjs/browser';
-
-// ─────────────────────────────────────────────────────────
-// EmailJS Config — fill these in from https://emailjs.com
-// ─────────────────────────────────────────────────────────
-const SERVICE_ID  = import.meta.env.VITE_EMAILJS_SERVICE_ID  || 'service_anchorvault';
-const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_waitlist';
-const PUBLIC_KEY  = import.meta.env.VITE_EMAILJS_PUBLIC_KEY  || 'YOUR_PUBLIC_KEY';
-
 /**
- * Sends two emails via EmailJS (purely client-side, no backend required):
- *  1. A welcome confirmation email TO the subscriber.
- *  2. An internal notification TO the admin.
+ * sendSubscriptionEmail
+ * ──────────────────────
+ * Uses Web3Forms (https://web3forms.com) — completely free, no backend needed.
+ * 
+ * Setup (takes 30 seconds):
+ *  1. Go to https://web3forms.com
+ *  2. Enter YOUR email (hello@anchorvault.xyz) → click "Create Access Key"
+ *  3. Copy the access key → add to .env as VITE_WEB3FORMS_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+ * 
+ * What happens when someone subscribes:
+ *  → Web3Forms emails YOU: "New subscriber: user@example.com"
+ *  → Web3Forms emails THE USER: your custom welcome message (auto-reply)
  */
-export const sendWaitlistEmail = async (userEmail: string): Promise<void> => {
-  // Template params match the variables in your EmailJS template
-  const templateParams = {
-    to_email:    userEmail,
-    from_name:   'AnchorVault Protocol',
-    reply_to:    'hello@anchorvault.xyz',
-    message: `
-      🎉 Welcome to AnchorVault x Virtuals Protocol!
+export const sendSubscriptionEmail = async (userEmail: string): Promise<void> => {
+  const ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_KEY;
 
-      You have successfully subscribed to our newsletter.
-      You are now officially in line for the protocol launch.
+  if (!ACCESS_KEY) {
+    throw new Error('Missing VITE_WEB3FORMS_KEY in environment variables.');
+  }
 
-      What's next?
-      ─────────────────────────────────────────────────────
-      • We will notify you the moment the Token Generation Event (TGE) goes live.
-      • Exclusive architectural updates and insider intel — straight to your inbox.
-      • Early access to the AnchorVault liquidity pools.
+  const res = await fetch('https://api.web3forms.com/submit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({
+      access_key: ACCESS_KEY,
+      subject: '🎉 New AnchorVault Newsletter Subscriber',
+      from_name: 'AnchorVault Protocol',
+      email: userEmail,                  // this is the subscriber's email
 
-      Follow us on X for real-time updates: https://x.com/Anchor_Vault
-      Explore the protocol: https://www.anchorvault.xyz
+      // ── Auto-reply sent TO the subscriber ──────────────────────────────
+      autoReply: true,
+      autoReplyMessage: `Hi there! 👋
 
-      Thank you for joining the future of decentralized cross-border settlements.
+Welcome to AnchorVault x Virtuals Protocol — you're officially in! 🎉
 
-      — The AnchorVault Team
-    `,
-  };
+✅ You have successfully subscribed to our newsletter.
+✅ You are now in line for the protocol launch.
 
-  await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, PUBLIC_KEY);
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+WHAT HAPPENS NEXT?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• You'll be the first to know when the Token Generation Event (TGE) goes live.
+• Exclusive architectural updates and insider intel — straight to your inbox.
+• Early access to the AnchorVault liquidity pools before public launch.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STAY CONNECTED
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🌐 Website:  https://www.anchorvault.xyz
+🐦 Twitter:  https://x.com/Anchor_Vault
+📩 Support:  hello@anchorvault.xyz
+
+Thank you for believing in the future of decentralized cross-border settlements.
+
+— The AnchorVault Team 🛡️`,
+
+      // ── Notification body sent TO YOU (admin) ──────────────────────────
+      message: `New newsletter subscriber: ${userEmail}\nTime: ${new Date().toISOString()}`,
+    }),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok || data.success === false) {
+    throw new Error(data.message || 'Web3Forms submission failed.');
+  }
 };

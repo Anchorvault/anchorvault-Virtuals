@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { sendWaitlistEmail } from '../lib/emailService';
+import { sendSubscriptionEmail } from '../lib/emailService';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
@@ -43,7 +43,7 @@ const Waitlist = () => {
     setErrorMsg('');
 
     try {
-      await sendWaitlistEmail(email);
+      await sendSubscriptionEmail(email);
 
       setStatus('success');
       localStorage.setItem('anchorvault_waitlist', email);
