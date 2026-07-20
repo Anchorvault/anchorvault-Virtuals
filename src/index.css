@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-anchor-blue: #0F172A;
+  --color-anchor-blueAccent: #1E3A8A;
+  --color-virtual-green: #10B981;
+  --color-virtual-greenAccent: #059669;
+  --font-sans: 'Inter', sans-serif;
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@layer base {
+  body {
+    @apply text-slate-900 font-sans antialiased overflow-x-hidden relative min-h-screen;
+    background-color: #F8FAFC;
+    background-image: 
+      linear-gradient(to bottom, rgba(255, 255, 255, 1) 0%, rgba(248, 250, 252, 1) 100%);
+  }
+
+  /* Grid overlay as a pseudo-element so it spans entire height */
+  body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
+    background-image: 
+      linear-gradient(rgba(226, 232, 240, 0.7) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(226, 232, 240, 0.7) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: top center;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-white/70 backdrop-blur-[16px] border border-white/50 shadow-xl rounded-2xl;
+  }
+  
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[--color-anchor-blue] to-[--color-anchor-blueAccent];
+  }
+}
